@@ -1,0 +1,58 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Zabbix Notify",
+        "description": "Creates a webhook that your Zabbix media type posts problem events to. The URL and token are shown after setup.",
+        "data": {
+          "name": "Name"
+        }
+      }
+    },
+    "create_entry": {
+      "default": "Zabbix Notify is set up.\n\nWebhook URL: `{webhook_url}`\n\nToken (HTTP header `{header}`): `{token}`\n\nEnter both in Zabbix (see the README). You can show them again in the integration options."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zabbix Notify options",
+        "description": "Webhook URL: `{webhook_url}`\n\nToken (HTTP header `{header}`): `{token}`",
+        "data": {
+          "language": "Text language",
+          "use_notification_center": "Use the DORALAB notification center when it is installed",
+          "persistent_notification": "Show Home Assistant notifications (without notification center)",
+          "link_to_zabbix": "Link notifications to the problem in Zabbix",
+          "notify_problem": "Push services for new problems",
+          "notify_update": "Push services for problem updates",
+          "notify_resolved": "Push services for resolved problems",
+          "regenerate_token": "Generate a new token"
+        },
+        "data_description": {
+          "use_notification_center": "With the notification center, recipients are chosen there per notification type. Nobody receives a push until you select people.",
+          "notify_problem": "Only used without the notification center. Leave empty to send no push.",
+          "regenerate_token": "Invalidates the current token. Update it in Zabbix afterwards."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "open_problems": {
+        "name": "Open problems"
+      },
+      "last_received": {
+        "name": "Last event received"
+      }
+    }
+  },
+  "selector": {
+    "language": {
+      "options": {
+        "auto": "Automatic (Home Assistant language)",
+        "de": "Deutsch",
+        "en": "English"
+      }
+    }
+  }
+}
