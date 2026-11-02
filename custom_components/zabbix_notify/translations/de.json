@@ -1,0 +1,58 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Zabbix Notify",
+        "description": "Legt einen Webhook an, an den der Zabbix-Media-Type Problem-Ereignisse sendet. URL und Token werden nach der Einrichtung angezeigt.",
+        "data": {
+          "name": "Name"
+        }
+      }
+    },
+    "create_entry": {
+      "default": "Zabbix Notify ist eingerichtet.\n\nWebhook-URL: `{webhook_url}`\n\nToken (HTTP-Header `{header}`): `{token}`\n\nTrage beides in Zabbix ein (siehe README). Du kannst sie in den Optionen der Integration jederzeit erneut anzeigen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zabbix Notify Optionen",
+        "description": "Webhook-URL: `{webhook_url}`\n\nToken (HTTP-Header `{header}`): `{token}`",
+        "data": {
+          "language": "Sprache der Texte",
+          "use_notification_center": "DORALAB-Benachrichtigungszentrale nutzen, wenn installiert",
+          "persistent_notification": "Home-Assistant-Benachrichtigungen anzeigen (ohne Benachrichtigungszentrale)",
+          "link_to_zabbix": "Benachrichtigungen mit dem Problem in Zabbix verlinken",
+          "notify_problem": "Push-Dienste für neue Probleme",
+          "notify_update": "Push-Dienste für Problem-Änderungen",
+          "notify_resolved": "Push-Dienste für behobene Probleme",
+          "regenerate_token": "Neues Token erzeugen"
+        },
+        "data_description": {
+          "use_notification_center": "Mit der Benachrichtigungszentrale wählst du die Empfänger dort pro Meldungstyp. Solange niemand ausgewählt ist, bekommt auch niemand einen Push.",
+          "notify_problem": "Wird nur ohne Benachrichtigungszentrale verwendet. Leer lassen, um keinen Push zu senden.",
+          "regenerate_token": "Das bisherige Token wird ungültig. Danach in Zabbix aktualisieren."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "open_problems": {
+        "name": "Offene Probleme"
+      },
+      "last_received": {
+        "name": "Letztes Ereignis empfangen"
+      }
+    }
+  },
+  "selector": {
+    "language": {
+      "options": {
+        "auto": "Automatisch (Sprache von Home Assistant)",
+        "de": "Deutsch",
+        "en": "English"
+      }
+    }
+  }
+}

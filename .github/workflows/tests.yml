@@ -1,0 +1,23 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: pip install pytest-homeassistant-custom-component pyyaml
+      - run: pytest
+      - name: Media type YAML is up to date
+        run: |
+          python zabbix/build_media_type.py
+          git diff --exit-code zabbix/media_type_home_assistant.yaml
