@@ -45,8 +45,9 @@ SEVERITY_KEYS = (
 # From this severity on, push notifications are marked as time-sensitive
 URGENT_SEVERITY = 4
 
-# Optional bridge to the DORALAB notification center (doralab_notify)
-CENTER_DOMAIN = "doralab_notify"
+# Optional bridge to the notification center Enhanced Notify (enhanced_notify).
+# Its predecessor "DORALAB Notify" (doralab_notify, up to 0.3.x) is still found as a fallback.
+CENTER_DOMAINS = ("enhanced_notify", "doralab_notify")
 CENTER_SERVICE = "send"
 CENTER_CATEGORY = "system"
 CENTER_TYPE_IDS = {

@@ -148,9 +148,30 @@ async def test_lifecycle_standalone(hass, hass_client_no_auth, setup):
     assert hass.states.get(LAST_SENSOR).state != "unknown"
 
 
-async def test_center_bridge(hass, hass_client_no_auth, setup):
-    """With doralab_notify present, one entry per problem is kept via the tag."""
+async def test_center_bridge_falls_back_to_former_domain(hass, hass_client_no_auth, setup):
+    """Notification center 0.3.x (doralab_notify) is still used while it is the only one."""
     calls = async_mock_service(hass, "doralab_notify", "send")
+    await setup()
+    client = await hass_client_no_auth()
+    await post(client, payload())
+    await hass.async_block_till_done()
+    assert [c.data["type"] for c in calls] == ["zabbix_problem"]
+
+
+async def test_center_bridge_prefers_new_domain(hass, hass_client_no_auth, setup):
+    """If both are present (during the switch), only Enhanced Notify gets the message."""
+    old = async_mock_service(hass, "doralab_notify", "send")
+    new = async_mock_service(hass, "enhanced_notify", "send")
+    await setup()
+    client = await hass_client_no_auth()
+    await post(client, payload())
+    await hass.async_block_till_done()
+    assert len(new) == 1 and old == []
+
+
+async def test_center_bridge(hass, hass_client_no_auth, setup):
+    """With enhanced_notify present, one entry per problem is kept via the tag."""
+    calls = async_mock_service(hass, "enhanced_notify", "send")
     await setup()
     client = await hass_client_no_auth()
 
@@ -190,7 +211,7 @@ async def test_center_bridge_falls_back_for_older_center(hass, hass_client_no_au
             vol.Optional("push"): bool,
         }
     )
-    calls = async_mock_service(hass, "doralab_notify", "send", schema=strict)
+    calls = async_mock_service(hass, "enhanced_notify", "send", schema=strict)
     await setup()
     client = await hass_client_no_auth()
     assert (await post(client, payload())).status == 200
@@ -199,7 +220,7 @@ async def test_center_bridge_falls_back_for_older_center(hass, hass_client_no_au
 
 
 async def test_center_gets_icon_from_option(hass, hass_client_no_auth, setup):
-    calls = async_mock_service(hass, "doralab_notify", "send")
+    calls = async_mock_service(hass, "enhanced_notify", "send")
     await setup({"icon": "/local/zabbix.png"})
     client = await hass_client_no_auth()
     await post(client, payload())
@@ -224,7 +245,7 @@ async def test_center_without_icon_support_still_gets_name_and_category(
             vol.Optional("type_name"): str,
         }
     )
-    calls = async_mock_service(hass, "doralab_notify", "send", schema=middle)
+    calls = async_mock_service(hass, "enhanced_notify", "send", schema=middle)
     await setup({"icon": "/local/zabbix.png"})
     client = await hass_client_no_auth()
     assert (await post(client, payload())).status == 200
@@ -235,7 +256,7 @@ async def test_center_without_icon_support_still_gets_name_and_category(
 
 
 async def test_center_can_be_disabled(hass, hass_client_no_auth, setup):
-    calls = async_mock_service(hass, "doralab_notify", "send")
+    calls = async_mock_service(hass, "enhanced_notify", "send")
     await setup({"use_notification_center": False})
     client = await hass_client_no_auth()
     with patch("custom_components.zabbix_notify.hub.persistent_notification") as persistent:
@@ -265,7 +286,7 @@ async def test_notify_services_standalone(hass, hass_client_no_auth, setup):
 
 
 async def test_test_event_creates_nothing(hass, hass_client_no_auth, setup):
-    calls = async_mock_service(hass, "doralab_notify", "send")
+    calls = async_mock_service(hass, "enhanced_notify", "send")
     await setup()
     client = await hass_client_no_auth()
     assert hass.states.get(LAST_SENSOR).state == "unknown"

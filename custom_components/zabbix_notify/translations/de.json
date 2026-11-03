@@ -20,7 +20,7 @@
         "description": "Webhook-URL: `{webhook_url}`\n\nToken (HTTP-Header `{header}`): `{token}`",
         "data": {
           "language": "Sprache der Texte",
-          "use_notification_center": "DORALAB-Benachrichtigungszentrale nutzen, wenn installiert",
+          "use_notification_center": "Benachrichtigungszentrale Enhanced Notify nutzen, wenn installiert",
           "persistent_notification": "Home-Assistant-Benachrichtigungen anzeigen (ohne Benachrichtigungszentrale)",
           "link_to_zabbix": "Benachrichtigungen mit dem Problem in Zabbix verlinken",
           "icon": "Icon der Meldungen",

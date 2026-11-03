@@ -7,7 +7,7 @@ Zabbix decides *what* is reported (hosts, severities, tags), Home Assistant deci
 
 - One notification **per problem**: the same entry is updated when the problem is acknowledged, changed or resolved
 - Works on its own: persistent notifications, optional push to chosen `notify` services, sensors and a bus event for your automations
-- Optional bridge to the **DORALAB notification center** (`doralab_notify`): the three Zabbix types appear there on the first event, and you pick the recipients per type. Nobody gets a push until you select people.
+- Optional bridge to the **Enhanced Notify notification center** (`enhanced_notify`): the three Zabbix types appear there on the first event, and you pick the recipients per type. Nobody gets a push until you select people.
 - Webhook secured with a token, one webhook per Zabbix server, German and English texts
 - Includes a ready-to-import Zabbix media type (no external dependencies)
 
@@ -18,7 +18,7 @@ Zabbix action ──► media type "Home Assistant (Zabbix Notify)" ──POST J
                                                                               │
                           ┌───────────────────────────────────────────────────┤
                           ▼                                                   ▼
-              doralab_notify (if installed)                  persistent notification / notify services
+              enhanced_notify (if installed)                  persistent notification / notify services
                  types: zabbix_problem · zabbix_update · zabbix_resolved
 ```
 
@@ -39,7 +39,7 @@ Zabbix action ──► media type "Home Assistant (Zabbix Notify)" ──POST J
 
 **Manual:** copy `custom_components/zabbix_notify` into your `config/custom_components` folder and restart.
 
-**Together with the notification center:** the two are separate integrations and are installed independently, in any order. Install [DORALAB Notify](https://github.com/dominikramachers/ha-enhanced-notify) (`doralab_notify`) the same way via HACS and add both under *Devices & services*. Zabbix Notify detects the notification center on every event, so nothing needs to be linked, and it keeps working if the notification center is removed later.
+**Together with the notification center:** the two are separate integrations and are installed independently, in any order. Install [Enhanced Notify](https://github.com/dominikramachers/ha-enhanced-notify) (`enhanced_notify`, formerly *DORALAB Notify*) the same way via HACS and add both under *Devices & services*. Zabbix Notify detects the notification center on every event, so nothing needs to be linked, and it keeps working if the notification center is removed later.
 
 ## Setup
 
@@ -74,7 +74,7 @@ If you prefer to create the media type by hand, use the script `zabbix/ha_notify
 
 ### 3. Choose who gets notified
 
-**With the DORALAB notification center:** after the first event the types *Zabbix: Problem*, *Zabbix: Problem updated* and *Zabbix: Problem resolved* appear in the notification center. Open its overview and select the people and the push mode per type. The default is nobody.
+**With the Enhanced Notify notification center:** after the first event the types *Zabbix: Problem*, *Zabbix: Problem updated* and *Zabbix: Problem resolved* appear in the notification center. Open its overview and select the people and the push mode per type. The default is nobody.
 
 **Without it:** open *Configure* on the integration and pick `notify` services per event kind (for example `mobile_app_my_phone`). Empty means no push. Problems of severity High and above are sent as time-sensitive.
 
@@ -89,7 +89,7 @@ The repository does not ship the Zabbix logo, because it is a trademark of Zabbi
 | Option | Meaning |
 |---|---|
 | Text language | automatic (Home Assistant language), German or English |
-| Use the DORALAB notification center | bridge on/off (only active when `doralab_notify.send` exists) |
+| Use the Enhanced Notify notification center | bridge on/off (only active when `enhanced_notify.send` or the former `doralab_notify.send` exists) |
 | Show Home Assistant notifications | persistent notifications when no notification center is used |
 | Link to Zabbix | adds a link to the problem in the Zabbix frontend |
 | Icon of the notifications | icon of the three Zabbix types in the notification center, see below |

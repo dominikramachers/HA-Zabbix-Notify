@@ -20,7 +20,7 @@
         "description": "Webhook URL: `{webhook_url}`\n\nToken (HTTP header `{header}`): `{token}`",
         "data": {
           "language": "Text language",
-          "use_notification_center": "Use the DORALAB notification center when it is installed",
+          "use_notification_center": "Use the Enhanced Notify notification center when it is installed",
           "persistent_notification": "Show Home Assistant notifications (without notification center)",
           "link_to_zabbix": "Link notifications to the problem in Zabbix",
           "icon": "Icon of the notifications",

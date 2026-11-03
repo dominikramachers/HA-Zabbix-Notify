@@ -19,7 +19,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CENTER_CATEGORY,
-    CENTER_DOMAIN,
+    CENTER_DOMAINS,
     CENTER_SERVICE,
     CENTER_TYPE_IDS,
     CONF_TOKEN,
@@ -220,9 +220,13 @@ class ZabbixHub:
 
     # --------------------------------------------------------------- delivery
 
-    def _center_available(self) -> bool:
-        return bool(self._opt(OPT_USE_CENTER, True)) and self.hass.services.has_service(
-            CENTER_DOMAIN, CENTER_SERVICE
+    def _center_domain(self) -> str | None:
+        """Domain of the installed notification center (new name first), if any."""
+        if not self._opt(OPT_USE_CENTER, True):
+            return None
+        return next(
+            (d for d in CENTER_DOMAINS if self.hass.services.has_service(d, CENTER_SERVICE)),
+            None,
         )
 
     async def _async_deliver(self, event: ZabbixEvent) -> None:
@@ -230,8 +234,8 @@ class ZabbixHub:
         title, message = build_message(event, lang)
         link = zabbix_link(event) if self._opt(OPT_LINK, True) else None
 
-        if self._center_available():
-            await self._async_send_center(event, lang, title, message, link)
+        if center := self._center_domain():
+            await self._async_send_center(center, event, lang, title, message, link)
             return
 
         if self._opt(OPT_PERSISTENT, True):
@@ -246,7 +250,7 @@ class ZabbixHub:
         await self._async_send_notify(event, title, message, link)
 
     async def _async_send_center(
-        self, event: ZabbixEvent, lang: str, title: str, message: str, link: str | None
+        self, center: str, event: ZabbixEvent, lang: str, title: str, message: str, link: str | None
     ) -> None:
         """Hand over to the notification center; recipients are managed there."""
         base: dict[str, Any] = {
@@ -271,7 +275,7 @@ class ZabbixHub:
         for index, payload in enumerate(attempts):
             try:
                 await self.hass.services.async_call(
-                    CENTER_DOMAIN, CENTER_SERVICE, payload, blocking=True
+                    center, CENTER_SERVICE, payload, blocking=True
                 )
             except vol.Invalid:
                 if index == len(attempts) - 1:
