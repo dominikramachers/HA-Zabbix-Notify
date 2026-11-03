@@ -31,6 +31,7 @@ from .const import (
     KIND_TEST,
     KIND_UPDATE,
     MAX_RESOLVED_MEMORY,
+    OPT_ICON,
     OPT_LANGUAGE,
     OPT_LINK,
     OPT_NOTIFY_PROBLEM,
@@ -262,15 +263,21 @@ class ZabbixHub:
             "type_name": type_name(event.kind, lang),
             "category": CENTER_CATEGORY,
         }
-        try:
-            await self.hass.services.async_call(
-                CENTER_DOMAIN, CENTER_SERVICE, extended, blocking=True
-            )
-        except vol.Invalid:
-            # Older notification center without the optional fields.
-            await self.hass.services.async_call(
-                CENTER_DOMAIN, CENTER_SERVICE, base, blocking=True
-            )
+        # An empty type_icon resets the type to the icon of its category.
+        full = {**extended, "type_icon": str(self._opt(OPT_ICON, "") or "").strip()}
+        # Older notification centers do not know the optional fields: try the
+        # richest payload first and fall back step by step.
+        attempts = (full, extended, base)
+        for index, payload in enumerate(attempts):
+            try:
+                await self.hass.services.async_call(
+                    CENTER_DOMAIN, CENTER_SERVICE, payload, blocking=True
+                )
+            except vol.Invalid:
+                if index == len(attempts) - 1:
+                    raise
+            else:
+                return
 
     async def _async_send_notify(
         self, event: ZabbixEvent, title: str, message: str, link: str | None

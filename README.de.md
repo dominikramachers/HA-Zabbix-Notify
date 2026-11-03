@@ -69,6 +69,12 @@ Wer den Media Type lieber von Hand anlegt, nimmt das Skript `zabbix/ha_notify_we
 
 **Ohne sie:** In der Integration *Konfigurieren* öffnen und pro Ereignisart `notify`-Dienste wählen (z. B. `mobile_app_mein_handy`). Leer bedeutet kein Push. Probleme ab Schweregrad Hoch werden als zeitkritisch gesendet.
 
+### Icon in der Benachrichtigungszentrale
+
+Automatisch angelegte Typen bekommen das Icon ihrer Kategorie (ein Zahnrad bei *System*). Unter *Konfigurieren* kannst du stattdessen ein **Icon** festlegen: einen Icon-Namen wie `mdi:server` oder ein Bild. Für ein Bild kopierst du ein quadratisches PNG nach `config/www/` von Home Assistant (zum Beispiel `config/www/zabbix.png`) und trägst `/local/zabbix.png` ein. Das Bild erscheint in der Meldungsliste und in der Admin-Übersicht, und eine geänderte Option gilt nach dem nächsten Ereignis auch für die schon vorhandenen Typen. Leer bedeutet das Icon der Kategorie. Dafür wird Benachrichtigungszentrale 0.3.0-beta.3 oder neuer gebraucht, ältere Versionen ignorieren die Option.
+
+Das Repository liefert das Zabbix-Logo nicht mit, weil es eine Marke von Zabbix SIA ist. Verwende das Logo, das du selbst nutzen darfst.
+
 ## Optionen
 
 | Option | Bedeutung |
@@ -77,6 +83,7 @@ Wer den Media Type lieber von Hand anlegt, nimmt das Skript `zabbix/ha_notify_we
 | DORALAB-Benachrichtigungszentrale nutzen | Anbindung an/aus (nur aktiv, wenn `doralab_notify.send` existiert) |
 | Home-Assistant-Benachrichtigungen anzeigen | wenn keine Benachrichtigungszentrale genutzt wird |
 | Link zu Zabbix | fügt einen Link zum Problem im Zabbix-Frontend hinzu |
+| Icon der Meldungen | Icon der drei Zabbix-Typen in der Benachrichtigungszentrale, siehe unten |
 | Push-Dienste je Ereignisart | wird ohne Benachrichtigungszentrale verwendet |
 | Neues Token erzeugen | macht das alte Token ungültig |
 

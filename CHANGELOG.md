@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- New option *Icon of the notifications*: shows an icon name or an image (for example `/local/zabbix.png`) for the Zabbix types in the DORALAB notification center instead of the category icon. Needs notification center 0.3.0-beta.3 or newer, older versions ignore it.
+
 ## 0.1.1
 
 - Fix: the Zabbix media type import now contains message templates for problem, recovery and update. Without them Zabbix refused to send ("No message defined for media type").

@@ -78,6 +78,12 @@ If you prefer to create the media type by hand, use the script `zabbix/ha_notify
 
 **Without it:** open *Configure* on the integration and pick `notify` services per event kind (for example `mobile_app_my_phone`). Empty means no push. Problems of severity High and above are sent as time-sensitive.
 
+### Icon in the notification center
+
+Automatically created types get the icon of their category (a gear for *System*). Under *Configure* you can set an **icon** instead: an icon name such as `mdi:server`, or an image. For an image, copy a square PNG to `config/www/` of Home Assistant (for example `config/www/zabbix.png`) and enter `/local/zabbix.png`. The image is shown in the notification list and in the admin overview, and a changed option also applies to the already existing types after the next event. Empty means the category icon. This needs notification center 0.3.0-beta.3 or newer; older versions ignore the option.
+
+The repository does not ship the Zabbix logo, because it is a trademark of Zabbix SIA. Use the logo you are allowed to use yourself.
+
 ## Options
 
 | Option | Meaning |
@@ -86,6 +92,7 @@ If you prefer to create the media type by hand, use the script `zabbix/ha_notify
 | Use the DORALAB notification center | bridge on/off (only active when `doralab_notify.send` exists) |
 | Show Home Assistant notifications | persistent notifications when no notification center is used |
 | Link to Zabbix | adds a link to the problem in the Zabbix frontend |
+| Icon of the notifications | icon of the three Zabbix types in the notification center, see below |
 | Push services per kind | used without the notification center |
 | Generate a new token | invalidates the old token |
 

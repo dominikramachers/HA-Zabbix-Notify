@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "zabbix_notify"
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 # Config entry data
 CONF_WEBHOOK_ID = "webhook_id"
@@ -14,6 +14,7 @@ OPT_LANGUAGE = "language"
 OPT_USE_CENTER = "use_notification_center"
 OPT_PERSISTENT = "persistent_notification"
 OPT_LINK = "link_to_zabbix"
+OPT_ICON = "icon"
 OPT_NOTIFY_PROBLEM = "notify_problem"
 OPT_NOTIFY_UPDATE = "notify_update"
 OPT_NOTIFY_RESOLVED = "notify_resolved"
