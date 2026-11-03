@@ -36,7 +36,7 @@
           "notify_problem": "Wird nur ohne Benachrichtigungszentrale verwendet. Leer lassen, um keinen Push zu senden.",
           "regenerate_token": "Das bisherige Token wird ungültig. Danach in Zabbix aktualisieren.",
           "icon": "Optional. Wird in der Benachrichtigungszentrale für die drei Zabbix-Typen statt des Kategorie-Icons angezeigt: ein Icon-Name (mdi:server), ein Pfad zu einem Bild auf diesem Home Assistant (/local/zabbix.png, Datei in config/www) oder eine Webadresse. Leer = Icon der Kategorie. Benötigt Benachrichtigungszentrale 0.3.0-beta.3 oder neuer.",
-          "zabbix_url": "Optional, z. B. https://zabbix.example.com. Für die Links im Dashboard und in Benachrichtigungen. Leer = Adresse, die Zabbix selbst mitschickt ({$ZABBIX.URL}).",
+          "zabbix_url": "Optional, z. B. https://zabbix.example.com. Für die Links im Dashboard und in Benachrichtigungen. Leer = Adresse, die Zabbix selbst mitschickt (Makro ZABBIX.URL).",
           "show_dashboard": "Zeigt offene Probleme, betroffene Hosts und Links zu Zabbix. Nur für Administratoren sichtbar, Farben folgen dem Theme von Home Assistant."
         }
       }
