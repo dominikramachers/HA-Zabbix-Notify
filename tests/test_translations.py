@@ -27,3 +27,10 @@ def test_placeholders_are_identifiers(file):
     for path, text in _strings(json.loads(file.read_text(encoding="utf-8"))):
         for placeholder in re.findall(r"\{([^}]*)\}", text):
             assert IDENTIFIER.fullmatch(placeholder), f"{file.name}{path}: {{{placeholder}}}"
+
+
+@pytest.mark.parametrize("file", TRANSLATIONS, ids=lambda f: f.name)
+def test_no_urls_in_translations(file):
+    """hassfest: translations must not contain URLs, pass them as placeholders."""
+    for path, text in _strings(json.loads(file.read_text(encoding="utf-8"))):
+        assert not re.search(r"https?://|www\.", text), f"{file.name}{path}"
