@@ -7,7 +7,7 @@ Zabbix entscheidet, *was* gemeldet wird (Hosts, Schweregrade, Tags). Home Assist
 
 - Eine Meldung **pro Problem**: derselbe Eintrag wird aktualisiert, wenn das Problem bestätigt, geändert oder behoben wird
 - Funktioniert eigenständig: Home-Assistant-Benachrichtigungen, optionaler Push an gewählte `notify`-Dienste, Sensoren und ein Bus-Event für Automationen
-- Optionale Anbindung an die **DORALAB-Benachrichtigungszentrale** (`doralab_notify`): Die drei Zabbix-Typen erscheinen dort beim ersten Ereignis, die Empfänger wählst du pro Typ. Solange niemand ausgewählt ist, bekommt niemand einen Push.
+- Optionale Anbindung an die **Benachrichtigungszentrale Enhanced Notify** (`enhanced_notify`): Die drei Zabbix-Typen erscheinen dort beim ersten Ereignis, die Empfänger wählst du pro Typ. Solange niemand ausgewählt ist, bekommt niemand einen Push.
 - Webhook per Token gesichert, ein Webhook pro Zabbix-Server, Texte auf Deutsch und Englisch
 - Enthält einen fertig importierbaren Zabbix-Media-Type (keine externen Abhängigkeiten)
 
@@ -30,7 +30,7 @@ Zabbix entscheidet, *was* gemeldet wird (Hosts, Schweregrade, Tags). Home Assist
 
 **Manuell:** `custom_components/zabbix_notify` nach `config/custom_components` kopieren und neu starten.
 
-**Zusammen mit der Benachrichtigungszentrale:** Beide sind getrennte Integrationen und werden unabhängig voneinander installiert, in beliebiger Reihenfolge. [DORALAB Notify](https://github.com/dominikramachers/ha-enhanced-notify) (`doralab_notify`) ebenfalls über HACS installieren und beide unter *Geräte & Dienste* hinzufügen. Zabbix Notify erkennt die Benachrichtigungszentrale bei jedem Ereignis neu, es muss also nichts verknüpft werden, und es funktioniert weiter, falls die Zentrale später entfernt wird.
+**Zusammen mit der Benachrichtigungszentrale:** Beide sind getrennte Integrationen und werden unabhängig voneinander installiert, in beliebiger Reihenfolge. [Enhanced Notify](https://github.com/dominikramachers/ha-enhanced-notify) (`enhanced_notify`, früher *DORALAB Notify*) ebenfalls über HACS installieren und beide unter *Geräte & Dienste* hinzufügen. Zabbix Notify erkennt die Benachrichtigungszentrale bei jedem Ereignis neu, es muss also nichts verknüpft werden, und es funktioniert weiter, falls die Zentrale später entfernt wird.
 
 ## Einrichtung
 
@@ -65,7 +65,7 @@ Wer den Media Type lieber von Hand anlegt, nimmt das Skript `zabbix/ha_notify_we
 
 ### 3. Empfänger festlegen
 
-**Mit der DORALAB-Benachrichtigungszentrale:** Nach dem ersten Ereignis erscheinen dort *Zabbix: Problem*, *Zabbix: Problem aktualisiert* und *Zabbix: Problem behoben*. In der Übersicht wählst du pro Typ die Personen und den Push-Modus. Standard ist niemand.
+**Mit der Benachrichtigungszentrale Enhanced Notify:** Nach dem ersten Ereignis erscheinen dort *Zabbix: Problem*, *Zabbix: Problem aktualisiert* und *Zabbix: Problem behoben*. In der Übersicht wählst du pro Typ die Personen und den Push-Modus. Standard ist niemand.
 
 **Ohne sie:** In der Integration *Konfigurieren* öffnen und pro Ereignisart `notify`-Dienste wählen (z. B. `mobile_app_mein_handy`). Leer bedeutet kein Push. Probleme ab Schweregrad Hoch werden als zeitkritisch gesendet.
 
@@ -80,7 +80,7 @@ Das Repository liefert das Zabbix-Logo nicht mit, weil es eine Marke von Zabbix 
 | Option | Bedeutung |
 |---|---|
 | Sprache der Texte | automatisch (Sprache von Home Assistant), Deutsch oder Englisch |
-| DORALAB-Benachrichtigungszentrale nutzen | Anbindung an/aus (nur aktiv, wenn `doralab_notify.send` existiert) |
+| Benachrichtigungszentrale Enhanced Notify nutzen | Anbindung an/aus (nur aktiv, wenn `enhanced_notify.send` oder das frühere `doralab_notify.send` existiert) |
 | Home-Assistant-Benachrichtigungen anzeigen | wenn keine Benachrichtigungszentrale genutzt wird |
 | Link zu Zabbix | fügt einen Link zum Problem im Zabbix-Frontend hinzu |
 | Icon der Meldungen | Icon der drei Zabbix-Typen in der Benachrichtigungszentrale, siehe unten |

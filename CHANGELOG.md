@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- The notification center was renamed from *DORALAB Notify* (`doralab_notify`) to **Enhanced Notify** (`enhanced_notify`). The bridge uses `enhanced_notify.send` and still falls back to `doralab_notify.send`, so nothing breaks while you switch. No settings need to change.
+
 ## 0.1.2
 
 - New option *Icon of the notifications*: shows an icon name or an image (for example `/local/zabbix.png`) for the Zabbix types in the DORALAB notification center instead of the category icon. Needs notification center 0.3.0-beta.3 or newer, older versions ignore it.
