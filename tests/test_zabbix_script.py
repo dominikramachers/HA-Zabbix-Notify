@@ -116,6 +116,11 @@ def test_yaml_matches_script_file():
     script = (ROOT / "zabbix" / "ha_notify_webhook.js").read_text()
     assert media["type"] == "WEBHOOK"
     assert media["script"].rstrip("\n") == script.rstrip("\n")
+    # Without a template per operation mode Zabbix refuses to send
+    # ("No message defined for media type").
+    templates = {(t["event_source"], t["operation_mode"]) for t in media["message_templates"]}
+    assert templates == {("TRIGGERS", "PROBLEM"), ("TRIGGERS", "RECOVERY"), ("TRIGGERS", "UPDATE")}
+    assert all(t["subject"] and t["message"] for t in media["message_templates"])
     names = [p["name"] for p in media["parameters"]]
     assert len(names) == len(set(names))
     assert {"url", "token", "event_id", "event_value", "event_update_status"} <= set(names)

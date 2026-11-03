@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "zabbix_notify"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 # Config entry data
 CONF_WEBHOOK_ID = "webhook_id"
