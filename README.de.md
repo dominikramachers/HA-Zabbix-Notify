@@ -9,6 +9,7 @@ Zabbix entscheidet, *was* gemeldet wird (Hosts, Schweregrade, Tags). Home Assist
 - Funktioniert eigenständig: Home-Assistant-Benachrichtigungen, optionaler Push an gewählte `notify`-Dienste, Sensoren und ein Bus-Event für Automationen
 - Optionale Anbindung an die **Benachrichtigungszentrale Enhanced Notify** (`enhanced_notify`): Die drei Zabbix-Typen erscheinen dort beim ersten Ereignis, die Empfänger wählst du pro Typ. Solange niemand ausgewählt ist, bekommt niemand einen Push.
 - Webhook per Token gesichert, ein Webhook pro Zabbix-Server, Texte auf Deutsch und Englisch
+- **Zabbix-Dashboard** in der Seitenleiste, wird mit der Integration mitgeliefert und passt sich dem Home-Assistant-Theme an: offene Probleme nach Schweregrad, betroffene Hosts, Links ins Zabbix-Frontend
 - Enthält einen fertig importierbaren Zabbix-Media-Type (keine externen Abhängigkeiten)
 
 ## Funktionsweise
@@ -69,11 +70,26 @@ Wer den Media Type lieber von Hand anlegt, nimmt das Skript `zabbix/ha_notify_we
 
 **Ohne sie:** In der Integration *Konfigurieren* öffnen und pro Ereignisart `notify`-Dienste wählen (z. B. `mobile_app_mein_handy`). Leer bedeutet kein Push. Probleme ab Schweregrad Hoch werden als zeitkritisch gesendet.
 
+### Dashboard
+
+Die Integration legt in der Seitenleiste den Eintrag **Zabbix** an (nur für Administratoren). Es muss nichts erstellt oder importiert werden, das Dashboard gehört zur Integration und wird mit ihr aktualisiert.
+
+- Kacheln für offene Probleme (mit höchstem Schweregrad), betroffene Hosts und letztes Ereignis, dazu die Buttons *Zabbix öffnen* und *Alle Probleme in Zabbix*
+- Problemliste nach Schweregrad sortiert, mit Host, Alter, Bestätigt-Status und Link zum Ereignis in Zabbix; Filter nach Schweregrad
+- Die Farben kommen aus dem Home-Assistant-Theme (hell, dunkel und eigene Themes), fest sind nur die Schweregrad-Farben
+- Bei mehreren Zabbix-Quellen gibt es je Quelle einen Tab
+
+Alle Daten stammen aus den Push-Ereignissen, das Dashboard braucht also keinen API-Zugriff auf Zabbix. Die Kachel *Betroffene Hosts* zählt Hosts mit offenen Problemen. Die Gesamtzahl aller überwachten Hosts ist nicht Teil des Pushs.
+
+Für die Links wird die Adresse des Zabbix-Frontends gebraucht. Zabbix sendet sie mit jedem Ereignis mit (`{$ZABBIX.URL}`). Unter *Konfigurieren* kannst du eine **Zabbix-Adresse** setzen, zum Beispiel die Adresse, unter der du Zabbix im Browser erreichst. Der Eintrag in der Seitenleiste lässt sich mit **Dashboard in der Seitenleiste anzeigen** abschalten.
+
+**Probleme, die nicht verschwinden.** Konnte Zabbix das Behoben-Ereignis nicht zustellen (Home Assistant war aus, oder der Trigger wurde in Zabbix deaktiviert oder gelöscht, was keine Wiederherstellung erzeugt), bleibt das Problem hier offen. Mit dem ✕ in der Liste oder dem Dienst `zabbix_notify.dismiss_problem` (`event_id`, optional `entry_id`) entfernst du es. Es wird nichts gesendet, und ein verspätetes Duplikat dieses Ereignisses wird ignoriert.
+
 ### Icon in der Benachrichtigungszentrale
 
 Automatisch angelegte Typen bekommen das Icon ihrer Kategorie (ein Zahnrad bei *System*). Unter *Konfigurieren* kannst du stattdessen ein **Icon** festlegen: einen Icon-Namen wie `mdi:server` oder ein Bild. Für ein Bild kopierst du ein quadratisches PNG nach `config/www/` von Home Assistant (zum Beispiel `config/www/zabbix.png`) und trägst `/local/zabbix.png` ein. Das Bild erscheint in der Meldungsliste und in der Admin-Übersicht, und eine geänderte Option gilt nach dem nächsten Ereignis auch für die schon vorhandenen Typen. Leer bedeutet das Icon der Kategorie. Dafür wird Benachrichtigungszentrale 0.3.0-beta.3 oder neuer gebraucht, ältere Versionen ignorieren die Option.
 
-Das Repository liefert das Zabbix-Logo nicht mit, weil es eine Marke von Zabbix SIA ist. Verwende das Logo, das du selbst nutzen darfst.
+Die Integration selbst (Einstellungen → Geräte & Dienste, HACS) zeigt das Zabbix-Logo. Name und Logo von Zabbix sind Marken der Zabbix SIA und werden hier nur zur Kennzeichnung des Produkts verwendet. Das Projekt ist weder mit Zabbix SIA verbunden noch von ihr unterstützt.
 
 ## Optionen
 
@@ -83,17 +99,19 @@ Das Repository liefert das Zabbix-Logo nicht mit, weil es eine Marke von Zabbix 
 | Benachrichtigungszentrale Enhanced Notify nutzen | Anbindung an/aus (nur aktiv, wenn `enhanced_notify.send` oder das frühere `doralab_notify.send` existiert) |
 | Home-Assistant-Benachrichtigungen anzeigen | wenn keine Benachrichtigungszentrale genutzt wird |
 | Link zu Zabbix | fügt einen Link zum Problem im Zabbix-Frontend hinzu |
+| Dashboard in der Seitenleiste anzeigen | fügt den Eintrag *Zabbix* in der Seitenleiste hinzu oder entfernt ihn (Standard: an) |
+| Zabbix-Adresse | Basis-URL des Zabbix-Frontends für die Links; leer = Adresse, die Zabbix mitsendet |
 | Icon der Meldungen | Icon der drei Zabbix-Typen in der Benachrichtigungszentrale, siehe unten |
 | Push-Dienste je Ereignisart | wird ohne Benachrichtigungszentrale verwendet |
 | Neues Token erzeugen | macht das alte Token ungültig |
 
 ## Entitäten und Ereignisse
 
-- `sensor.<name>_offene_probleme`: Anzahl offener Probleme, Attribute `by_severity` und `problems` (bis 20)
+- `sensor.<name>_offene_probleme`: Anzahl offener Probleme, Attribute `by_severity`, `affected_hosts`, `zabbix_url`, `problems_url` und `problems` (bis 50, je mit `event_id`, `trigger_id`, `host`, `name`, `severity`, `opdata`, `acknowledged`, `since`, `url`). Die großen Attribute werden nicht in der Datenbank aufgezeichnet.
 - `sensor.<name>_letztes_ereignis_empfangen`: Zeitpunkt des letzten Aufrufs von Zabbix (Diagnose)
 - Ereignis `zabbix_notify_event` mit `kind` (`problem`, `update`, `resolved`), `event_id`, `host`, `name`, `severity` (0-5), `severity_name`, `opdata`, `update_action`, `update_message`, `tags`, `url`
 
-Offene Probleme leitet die Integration aus den empfangenen Ereignissen ab. Ereignisse, die Zabbix während eines Home-Assistant-Ausfalls nach allen Wiederholungen nicht zustellen konnte, fehlen, dann kann der Zähler von Zabbix abweichen.
+Offene Probleme leitet die Integration aus den empfangenen Ereignissen ab. Ereignisse, die Zabbix während eines Home-Assistant-Ausfalls nach allen Wiederholungen nicht zustellen konnte, fehlen, dann kann der Zähler von Zabbix abweichen. Solche Altlasten entfernst du mit dem ✕ im Dashboard oder dem Dienst `zabbix_notify.dismiss_problem`.
 
 ## Fehlersuche
 
@@ -109,7 +127,7 @@ Offene Probleme leitet die Integration aus den empfangenen Ereignissen ab. Ereig
 
 ```bash
 python -m venv venv
-venv/bin/pip install pytest-homeassistant-custom-component pyyaml
+venv/bin/pip install pytest-homeassistant-custom-component home-assistant-frontend pyyaml
 venv/bin/pytest
 python zabbix/build_media_type.py   # YAML nach Änderung des Skripts neu erzeugen
 ```

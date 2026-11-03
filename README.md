@@ -9,6 +9,7 @@ Zabbix decides *what* is reported (hosts, severities, tags), Home Assistant deci
 - Works on its own: persistent notifications, optional push to chosen `notify` services, sensors and a bus event for your automations
 - Optional bridge to the **Enhanced Notify notification center** (`enhanced_notify`): the three Zabbix types appear there on the first event, and you pick the recipients per type. Nobody gets a push until you select people.
 - Webhook secured with a token, one webhook per Zabbix server, German and English texts
+- **Zabbix dashboard** in the sidebar, shipped with the integration and following your Home Assistant theme: open problems by severity, affected hosts, links to the Zabbix frontend
 - Includes a ready-to-import Zabbix media type (no external dependencies)
 
 ## How it works
@@ -78,11 +79,26 @@ If you prefer to create the media type by hand, use the script `zabbix/ha_notify
 
 **Without it:** open *Configure* on the integration and pick `notify` services per event kind (for example `mobile_app_my_phone`). Empty means no push. Problems of severity High and above are sent as time-sensitive.
 
+### Dashboard
+
+The integration adds a **Zabbix** entry to the sidebar (admins only). Nothing has to be created or imported; it is part of the integration and updates with it.
+
+- Tiles for open problems (with the highest severity), affected hosts and the last event, plus buttons *Open Zabbix* and *All problems in Zabbix*
+- Problem list sorted by severity, with host, age, acknowledged state and a link to the event in Zabbix; filter by severity
+- Colours come from the Home Assistant theme (light, dark and custom themes); only the severity colours are fixed
+- With several Zabbix sources there is one tab per source
+
+All data comes from the push events, so the dashboard works without API access to Zabbix. The *affected hosts* tile counts hosts with open problems; the total number of monitored hosts is not part of the push data.
+
+The links need the address of the Zabbix frontend. Zabbix announces it with every event (`{$ZABBIX.URL}`); set **Zabbix address** under *Configure* to use a different one, for example the address you reach Zabbix with from your browser. The sidebar entry can be switched off with **Show dashboard in the sidebar**.
+
+**Problems that never go away.** If Zabbix could not deliver the recovery (Home Assistant was down, or the trigger was disabled or deleted in Zabbix, which produces no recovery), the problem stays open here. Use the ✕ button in the list or the service `zabbix_notify.dismiss_problem` (`event_id`, optional `entry_id`) to remove it. Nothing is sent, and a late duplicate of that event is ignored.
+
 ### Icon in the notification center
 
 Automatically created types get the icon of their category (a gear for *System*). Under *Configure* you can set an **icon** instead: an icon name such as `mdi:server`, or an image. For an image, copy a square PNG to `config/www/` of Home Assistant (for example `config/www/zabbix.png`) and enter `/local/zabbix.png`. The image is shown in the notification list and in the admin overview, and a changed option also applies to the already existing types after the next event. Empty means the category icon. This needs notification center 0.3.0-beta.3 or newer; older versions ignore the option.
 
-The repository does not ship the Zabbix logo, because it is a trademark of Zabbix SIA. Use the logo you are allowed to use yourself.
+The integration itself (Settings → Devices & services, HACS) shows the Zabbix logo. The Zabbix name and logo are trademarks of Zabbix SIA and are used here only to identify the product; this project is not affiliated with or endorsed by Zabbix SIA.
 
 ## Options
 
@@ -92,13 +108,15 @@ The repository does not ship the Zabbix logo, because it is a trademark of Zabbi
 | Use the Enhanced Notify notification center | bridge on/off (only active when `enhanced_notify.send` or the former `doralab_notify.send` exists) |
 | Show Home Assistant notifications | persistent notifications when no notification center is used |
 | Link to Zabbix | adds a link to the problem in the Zabbix frontend |
+| Show dashboard in the sidebar | adds or removes the *Zabbix* sidebar entry (default on) |
+| Zabbix address | base URL of the Zabbix frontend for the links; empty uses the address Zabbix announces |
 | Icon of the notifications | icon of the three Zabbix types in the notification center, see below |
 | Push services per kind | used without the notification center |
 | Generate a new token | invalidates the old token |
 
 ## Entities and events
 
-- `sensor.<name>_open_problems`: number of open problems, attributes `by_severity` and `problems` (up to 20)
+- `sensor.<name>_open_problems`: number of open problems, attributes `by_severity`, `affected_hosts`, `zabbix_url`, `problems_url` and `problems` (up to 50, each with `event_id`, `trigger_id`, `host`, `name`, `severity`, `opdata`, `acknowledged`, `since`, `url`). The large attributes are kept out of the recorder.
 - `sensor.<name>_last_event_received`: timestamp of the last call from Zabbix (diagnostic)
 - Event `zabbix_notify_event` with `kind` (`problem`, `update`, `resolved`), `event_id`, `host`, `name`, `severity` (0-5), `severity_name`, `opdata`, `update_action`, `update_message`, `tags`, `url`
 
@@ -115,7 +133,7 @@ actions:
     data: { color_name: red }
 ```
 
-Open problems are derived from the events Home Assistant has received. Events that Zabbix could not deliver while Home Assistant was down are lost after the retries, so the counter can differ from Zabbix in that case.
+Open problems are derived from the events Home Assistant has received. Events that Zabbix could not deliver while Home Assistant was down are lost after the retries, so the counter can differ from Zabbix in that case. Remove such leftovers with the ✕ button of the dashboard or the service `zabbix_notify.dismiss_problem`.
 
 ## Troubleshooting
 
@@ -131,7 +149,7 @@ Open problems are derived from the events Home Assistant has received. Events th
 
 ```bash
 python -m venv venv
-venv/bin/pip install pytest-homeassistant-custom-component pyyaml
+venv/bin/pip install pytest-homeassistant-custom-component home-assistant-frontend pyyaml
 venv/bin/pytest
 python zabbix/build_media_type.py   # regenerate the YAML after editing the script
 ```

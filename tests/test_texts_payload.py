@@ -8,6 +8,9 @@ import voluptuous as vol
 from custom_components.zabbix_notify.payload import ZabbixEvent, parse_event
 from custom_components.zabbix_notify.texts import (
     build_message,
+    event_link,
+    normalize_base_url,
+    problems_link,
     resolve_language,
     severity_name,
     type_name,
@@ -125,3 +128,28 @@ def test_zabbix_link():
     assert zabbix_link(event) == "https://z.example/zabbix.php?action=problem.view"
     event.zabbix_url = "not a url"
     assert zabbix_link(event) is None
+
+
+def test_normalize_base_url():
+    assert normalize_base_url(" https://z.example/zabbix/ ") == "https://z.example/zabbix"
+    assert normalize_base_url("ftp://z.example") == ""
+    assert normalize_base_url("z.example") == ""
+    assert normalize_base_url(None) == ""
+
+
+def test_links_without_base_are_none():
+    assert event_link("", "3", "9") is None
+    assert problems_link("") is None
+    assert event_link("https://z.example", "", "9") == "https://z.example/zabbix.php?action=problem.view"
+
+
+def test_configured_base_url_wins_over_payload():
+    event = ZabbixEvent(
+        kind="problem", event_id="9", trigger_id="3", zabbix_url="https://internal.example"
+    )
+    assert (
+        zabbix_link(event, "https://public.example/")
+        == "https://public.example/tr_events.php?triggerid=3&eventid=9"
+    )
+    # an unusable override falls back to what Zabbix announced
+    assert zabbix_link(event, "nonsense").startswith("https://internal.example/")

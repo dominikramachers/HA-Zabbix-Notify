@@ -23,7 +23,9 @@
           "use_notification_center": "Use the Enhanced Notify notification center when it is installed",
           "persistent_notification": "Show Home Assistant notifications (without notification center)",
           "link_to_zabbix": "Link notifications to the problem in Zabbix",
+          "zabbix_url": "Address of the Zabbix frontend",
           "icon": "Icon of the notifications",
+          "show_dashboard": "Show the “Zabbix” dashboard in the sidebar",
           "notify_problem": "Push services for new problems",
           "notify_update": "Push services for problem updates",
           "notify_resolved": "Push services for resolved problems",
@@ -33,12 +35,15 @@
           "use_notification_center": "With the notification center, recipients are chosen there per notification type. Nobody receives a push until you select people.",
           "notify_problem": "Only used without the notification center. Leave empty to send no push.",
           "regenerate_token": "Invalidates the current token. Update it in Zabbix afterwards.",
-          "icon": "Optional. Shown for the three Zabbix types in the notification center instead of the category icon: an icon name (mdi:server), a path to an image on this Home Assistant (/local/zabbix.png, file in config/www) or a web address. Empty = category icon. Needs notification center 0.3.0-beta.3 or newer."
+          "icon": "Optional. Shown for the three Zabbix types in the notification center instead of the category icon: an icon name (mdi:server), a path to an image on this Home Assistant (/local/zabbix.png, file in config/www) or a web address. Empty = category icon. Needs notification center 0.3.0-beta.3 or newer.",
+          "zabbix_url": "Optional, e.g. https://zabbix.example.com. Used for the links in the dashboard and in notifications. Empty = the address Zabbix sends itself ({$ZABBIX.URL}).",
+          "show_dashboard": "Shows open problems, affected hosts and links to Zabbix. Visible to administrators only, colours follow the Home Assistant theme."
         }
       }
     },
     "error": {
-      "invalid_icon": "Invalid icon. Use an icon name like mdi:server, a path like /local/zabbix.png, an http(s) address or data:image/…;base64,…"
+      "invalid_icon": "Invalid icon. Use an icon name like mdi:server, a path like /local/zabbix.png, an http(s) address or data:image/…;base64,…",
+      "invalid_url": "Invalid address. It must start with http:// or https://."
     }
   },
   "entity": {
@@ -58,6 +63,30 @@
         "de": "Deutsch",
         "en": "English"
       }
+    }
+  },
+  "services": {
+    "dismiss_problem": {
+      "name": "Remove problem as resolved",
+      "description": "Removes an open problem from Home Assistant whose recovery message never arrived. Nothing changes in Zabbix and nobody is notified.",
+      "fields": {
+        "event_id": {
+          "name": "Event ID",
+          "description": "The Zabbix event ID of the problem (shown in the dashboard and in the sensor attributes)."
+        },
+        "entry_id": {
+          "name": "Source",
+          "description": "Only needed with several Zabbix sources."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_source": {
+      "message": "No matching Zabbix source is loaded."
+    },
+    "unknown_problem": {
+      "message": "There is no open problem with event ID {event_id}."
     }
   }
 }

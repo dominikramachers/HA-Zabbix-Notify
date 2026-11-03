@@ -4,11 +4,11 @@
   "after_dependencies": ["enhanced_notify", "doralab_notify", "persistent_notification"],
   "codeowners": ["@dominikramachers"],
   "config_flow": true,
-  "dependencies": ["webhook"],
+  "dependencies": ["frontend", "http", "panel_custom", "webhook"],
   "documentation": "https://github.com/dominikramachers/HA-Zabbix-Notify",
   "integration_type": "service",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/dominikramachers/HA-Zabbix-Notify/issues",
   "requirements": [],
-  "version": "0.1.3"
+  "version": "0.2.0"
 }

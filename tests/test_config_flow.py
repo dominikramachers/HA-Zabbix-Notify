@@ -144,3 +144,36 @@ async def test_options_invalid_icon_shows_error_and_keeps_token(hass):
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
+
+
+async def test_options_zabbix_url_is_saved_and_normalized(hass):
+    entry = await _options_entry(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        _options_input("", zabbix_url=" https://zabbix.example/ ", show_dashboard=False),
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert entry.options["zabbix_url"] == "https://zabbix.example"
+    assert entry.options["show_dashboard"] is False
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+async def test_options_invalid_zabbix_url_shows_error(hass):
+    entry = await _options_entry(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], _options_input("", zabbix_url="zabbix.local")
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"zabbix_url": "invalid_url"}
+    assert "zabbix_url" not in entry.options
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], _options_input("", zabbix_url="")
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
