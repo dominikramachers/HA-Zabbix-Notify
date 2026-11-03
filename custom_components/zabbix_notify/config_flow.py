@@ -19,10 +19,12 @@ from homeassistant.helpers.selector import (
 )
 
 from . import ZabbixConfigEntry
+from .icons import is_valid_icon
 from .const import (
     CONF_TOKEN,
     CONF_WEBHOOK_ID,
     DOMAIN,
+    OPT_ICON,
     OPT_LANGUAGE,
     OPT_LINK,
     OPT_NOTIFY_PROBLEM,
@@ -94,14 +96,20 @@ class ZabbixNotifyOptionsFlow(OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         entry = self.config_entry
-        if user_input is not None:
-            if user_input.pop(OPT_REGENERATE, False):
-                self.hass.config_entries.async_update_entry(
-                    entry, data={**entry.data, CONF_TOKEN: secrets.token_urlsafe(32)}
-                )
-            return self.async_create_entry(data=user_input)
-
+        errors: dict[str, str] = {}
         options = entry.options
+        if user_input is not None:
+            icon = str(user_input.get(OPT_ICON, "")).strip()
+            if is_valid_icon(icon):
+                user_input[OPT_ICON] = icon
+                if user_input.pop(OPT_REGENERATE, False):
+                    self.hass.config_entries.async_update_entry(
+                        entry, data={**entry.data, CONF_TOKEN: secrets.token_urlsafe(32)}
+                    )
+                return self.async_create_entry(data=user_input)
+            errors[OPT_ICON] = "invalid_icon"
+            # Show the form again with what the user entered
+            options = {**options, **user_input}
 
         def notify_selector(key: str) -> SelectSelector:
             current = list(options.get(key, []))
@@ -132,6 +140,7 @@ class ZabbixNotifyOptionsFlow(OptionsFlow):
                     OPT_PERSISTENT, default=options.get(OPT_PERSISTENT, True)
                 ): bool,
                 vol.Optional(OPT_LINK, default=options.get(OPT_LINK, True)): bool,
+                vol.Optional(OPT_ICON, default=options.get(OPT_ICON, "")): str,
                 vol.Optional(
                     OPT_NOTIFY_PROBLEM, default=list(options.get(OPT_NOTIFY_PROBLEM, []))
                 ): notify_selector(OPT_NOTIFY_PROBLEM),
@@ -147,6 +156,7 @@ class ZabbixNotifyOptionsFlow(OptionsFlow):
         return self.async_show_form(
             step_id="init",
             data_schema=schema,
+            errors=errors,
             description_placeholders={
                 "webhook_url": webhook_url(self.hass, entry.data[CONF_WEBHOOK_ID]),
                 "token": entry.data[CONF_TOKEN],

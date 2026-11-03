@@ -23,6 +23,7 @@
           "use_notification_center": "DORALAB-Benachrichtigungszentrale nutzen, wenn installiert",
           "persistent_notification": "Home-Assistant-Benachrichtigungen anzeigen (ohne Benachrichtigungszentrale)",
           "link_to_zabbix": "Benachrichtigungen mit dem Problem in Zabbix verlinken",
+          "icon": "Icon der Meldungen",
           "notify_problem": "Push-Dienste für neue Probleme",
           "notify_update": "Push-Dienste für Problem-Änderungen",
           "notify_resolved": "Push-Dienste für behobene Probleme",
@@ -31,9 +32,13 @@
         "data_description": {
           "use_notification_center": "Mit der Benachrichtigungszentrale wählst du die Empfänger dort pro Meldungstyp. Solange niemand ausgewählt ist, bekommt auch niemand einen Push.",
           "notify_problem": "Wird nur ohne Benachrichtigungszentrale verwendet. Leer lassen, um keinen Push zu senden.",
-          "regenerate_token": "Das bisherige Token wird ungültig. Danach in Zabbix aktualisieren."
+          "regenerate_token": "Das bisherige Token wird ungültig. Danach in Zabbix aktualisieren.",
+          "icon": "Optional. Wird in der Benachrichtigungszentrale für die drei Zabbix-Typen statt des Kategorie-Icons angezeigt: ein Icon-Name (mdi:server), ein Pfad zu einem Bild auf diesem Home Assistant (/local/zabbix.png, Datei in config/www) oder eine Webadresse. Leer = Icon der Kategorie. Benötigt Benachrichtigungszentrale 0.3.0-beta.3 oder neuer."
         }
       }
+    },
+    "error": {
+      "invalid_icon": "Ungültiges Icon. Erlaubt sind ein Icon-Name wie mdi:server, ein Pfad wie /local/zabbix.png, eine http(s)-Adresse oder data:image/…;base64,…"
     }
   },
   "entity": {

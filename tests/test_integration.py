@@ -174,6 +174,7 @@ async def test_center_bridge(hass, hass_client_no_auth, setup):
     assert first["push"] is True
     assert first["category"] == "system"
     assert first["type_name"] == "Zabbix: Problem"
+    assert first["type_icon"] == ""  # no icon chosen: category icon
     assert first["title"] == "High: srv01"
     assert first["link"].startswith("https://zabbix.example/tr_events.php")
 
@@ -195,6 +196,42 @@ async def test_center_bridge_falls_back_for_older_center(hass, hass_client_no_au
     assert (await post(client, payload())).status == 200
     assert len(calls) == 1
     assert "category" not in calls[0].data and "type_name" not in calls[0].data
+
+
+async def test_center_gets_icon_from_option(hass, hass_client_no_auth, setup):
+    calls = async_mock_service(hass, "doralab_notify", "send")
+    await setup({"icon": "/local/zabbix.png"})
+    client = await hass_client_no_auth()
+    await post(client, payload())
+    await post(client, payload("resolved"))
+    await hass.async_block_till_done()
+    assert [c.data["type_icon"] for c in calls] == ["/local/zabbix.png", "/local/zabbix.png"]
+
+
+async def test_center_without_icon_support_still_gets_name_and_category(
+    hass, hass_client_no_auth, setup
+):
+    """A center that knows type_name/category but not type_icon keeps getting those."""
+    middle = vol.Schema(
+        {
+            vol.Required("type"): str,
+            vol.Required("message"): str,
+            vol.Optional("title"): str,
+            vol.Optional("tag"): str,
+            vol.Optional("link"): str,
+            vol.Optional("push"): bool,
+            vol.Optional("category"): str,
+            vol.Optional("type_name"): str,
+        }
+    )
+    calls = async_mock_service(hass, "doralab_notify", "send", schema=middle)
+    await setup({"icon": "/local/zabbix.png"})
+    client = await hass_client_no_auth()
+    assert (await post(client, payload())).status == 200
+    assert len(calls) == 1
+    assert calls[0].data["type_name"] == "Zabbix: Problem"
+    assert calls[0].data["category"] == "system"
+    assert "type_icon" not in calls[0].data
 
 
 async def test_center_can_be_disabled(hass, hass_client_no_auth, setup):
