@@ -13,6 +13,7 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.zabbix_notify.const import (
     CONF_TOKEN,
@@ -20,6 +21,10 @@ from custom_components.zabbix_notify.const import (
     DOMAIN,
     EVENT_ZABBIX,
     OPT_NOTIFY_PROBLEM,
+    OPT_SHOW_PANEL,
+    OPT_ZABBIX_URL,
+    PANEL_URL_PATH,
+    SERVICE_DISMISS,
     TOKEN_HEADER,
 )
 
@@ -317,3 +322,150 @@ async def test_state_survives_reload(hass, hass_client_no_auth, setup):
     client = await hass_client_no_auth()
     late = await post(client, payload(event_id="2002", host="srv02"))
     assert (await late.json())["ignored"] == "stale"
+
+
+# ------------------------------------------------------------------ dashboard data
+
+
+async def test_sensor_exposes_dashboard_data(hass, hass_client_no_auth, setup):
+    await setup({"persistent_notification": False})
+    client = await hass_client_no_auth()
+    await post(client, payload())
+    await post(client, payload(event_id="1002", trigger_id="78", host="srv02", severity="2"))
+    await post(client, payload("update", update_action="acknowledged"))
+    await hass.async_block_till_done()
+
+    attrs = hass.states.get(OPEN_SENSOR).attributes
+    assert attrs["affected_hosts"] == ["srv01", "srv02"]
+    assert attrs["zabbix_url"] == "https://zabbix.example"
+    assert attrs["problems_url"] == "https://zabbix.example/zabbix.php?action=problem.view"
+    first, second = attrs["problems"]  # most severe first
+    assert first["event_id"] == "1001" and first["acknowledged"] is True
+    assert first["trigger_id"] == "77"
+    assert first["url"] == "https://zabbix.example/tr_events.php?triggerid=77&eventid=1001"
+    assert second["acknowledged"] is False
+
+
+async def test_configured_zabbix_url_overrides_announced(hass, hass_client_no_auth, setup):
+    await setup({"persistent_notification": False, OPT_ZABBIX_URL: "https://public.example/"})
+    client = await hass_client_no_auth()
+    await post(client, payload())
+    await hass.async_block_till_done()
+    attrs = hass.states.get(OPEN_SENSOR).attributes
+    assert attrs["zabbix_url"] == "https://public.example"
+    assert attrs["problems"][0]["url"].startswith("https://public.example/tr_events.php")
+
+
+async def test_big_attributes_are_not_recorded():
+    from custom_components.zabbix_notify.sensor import OpenProblemsSensor
+
+    assert {"problems", "affected_hosts"} <= set(OpenProblemsSensor._unrecorded_attributes)
+
+
+# ------------------------------------------------------------------ dismiss service
+
+
+async def test_dismiss_removes_open_problem_silently(hass, hass_client_no_auth, setup):
+    await setup({"persistent_notification": False})
+    client = await hass_client_no_auth()
+    await post(client, payload())
+    await post(client, payload(event_id="1002", host="srv02"))
+    await hass.async_block_till_done()
+    events = async_capture_events(hass, EVENT_ZABBIX)
+
+    await hass.services.async_call(
+        DOMAIN, SERVICE_DISMISS, {"event_id": " 1001 "}, blocking=True
+    )
+    await hass.async_block_till_done()
+    assert hass.states.get(OPEN_SENSOR).state == "1"
+    assert events == []  # nothing is announced
+
+    # a late duplicate of the dismissed problem is ignored
+    late = await post(client, payload())
+    assert (await late.json())["ignored"] == "stale"
+
+
+async def test_dismiss_unknown_problem_raises(hass, setup):
+    await setup()
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN, SERVICE_DISMISS, {"event_id": "nope"}, blocking=True
+        )
+    assert err.value.translation_key == "unknown_problem"
+
+
+async def test_dismiss_unknown_entry_raises(hass, hass_client_no_auth, setup):
+    await setup({"persistent_notification": False})
+    client = await hass_client_no_auth()
+    await post(client, payload())
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_DISMISS,
+            {"event_id": "1001", "entry_id": "does-not-exist"},
+            blocking=True,
+        )
+    assert err.value.translation_key == "no_source"
+    assert hass.states.get(OPEN_SENSOR).state == "1"
+
+
+async def test_dismiss_requires_event_id(hass, setup):
+    await setup()
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(DOMAIN, SERVICE_DISMISS, {}, blocking=True)
+
+
+# ------------------------------------------------------------------ sidebar panel
+
+
+def _panel_registered(hass) -> bool:
+    return PANEL_URL_PATH in hass.data.get("frontend_panels", {})
+
+
+async def test_panel_is_registered_and_removed(hass, setup):
+    entry = await setup()
+    assert _panel_registered(hass)
+    panel = hass.data["frontend_panels"][PANEL_URL_PATH]
+    assert panel.require_admin is True
+    assert panel.sidebar_title == "Zabbix"
+
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert not _panel_registered(hass)
+
+
+async def test_panel_can_be_switched_off(hass, setup):
+    entry = await setup({OPT_SHOW_PANEL: False})
+    assert not _panel_registered(hass)
+
+    hass.config_entries.async_update_entry(entry, options={OPT_SHOW_PANEL: True})
+    await hass.async_block_till_done()
+    assert _panel_registered(hass)
+
+
+async def test_panel_lives_while_any_source_wants_it(hass, setup):
+    first = await setup()
+    second = MockConfigEntry(
+        domain=DOMAIN,
+        title="Zabbix 2",
+        data={CONF_WEBHOOK_ID: "whsecond0123456789", CONF_TOKEN: "tok2"},
+    )
+    second.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(second.entry_id)
+    await hass.async_block_till_done()
+
+    await hass.config_entries.async_unload(first.entry_id)
+    await hass.async_block_till_done()
+    assert _panel_registered(hass)
+
+    await hass.config_entries.async_unload(second.entry_id)
+    await hass.async_block_till_done()
+    assert not _panel_registered(hass)
+
+
+async def test_panel_script_is_served(hass, hass_client, setup):
+    await setup()
+    client = await hass_client()
+    response = await client.get("/zabbix_notify_static/zabbix-notify-panel.js")
+    assert response.status == 200
+    assert "zabbix-notify-panel" in await response.text()

@@ -62,6 +62,10 @@ class OpenProblemsSensor(_ZabbixSensor):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "problems"
     _attr_icon = "mdi:alert-circle-outline"
+    # The list is large and only useful live; keep it out of the recorder database.
+    _unrecorded_attributes = frozenset(
+        {"problems", "zabbix_url", "problems_url", "affected_hosts"}
+    )
 
     def __init__(self, hub: ZabbixHub) -> None:
         super().__init__(hub, "open_problems")
@@ -78,15 +82,24 @@ class OpenProblemsSensor(_ZabbixSensor):
             reverse=True,
         )
         counts = Counter(p.get("severity", 0) for p in problems)
+        hosts = sorted({p.get("host", "") for p in problems if p.get("host")})
         return {
+            "entry_id": self._hub.entry.entry_id,
             "by_severity": {key: counts.get(i, 0) for i, key in enumerate(SEVERITY_KEYS)},
+            "affected_hosts": hosts,
+            "zabbix_url": self._hub.base_url or None,
+            "problems_url": self._hub.problems_url,
             "problems": [
                 {
                     "event_id": p["event_id"],
+                    "trigger_id": p.get("trigger_id", ""),
                     "host": p.get("host", ""),
-                    "name": p.get("name", ""),
+                    "name": p.get("name", "")[:300],
                     "severity": SEVERITY_KEYS[p.get("severity", 0)],
+                    "opdata": p.get("opdata", "")[:200],
+                    "acknowledged": bool(p.get("acknowledged", False)),
                     "since": p.get("since"),
+                    "url": self._hub.problem_url(p),
                 }
                 for p in problems[:MAX_ATTRIBUTE_PROBLEMS]
             ],

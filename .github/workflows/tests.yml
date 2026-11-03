@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: pip install pytest-homeassistant-custom-component pyyaml
+      - run: pip install pytest-homeassistant-custom-component home-assistant-frontend pyyaml
       - run: pytest
       - name: Media type YAML is up to date
         run: |

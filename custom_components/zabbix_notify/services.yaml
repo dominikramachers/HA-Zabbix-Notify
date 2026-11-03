@@ -1,0 +1,12 @@
+dismiss_problem:
+  fields:
+    event_id:
+      required: true
+      example: "643174"
+      selector:
+        text:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: zabbix_notify

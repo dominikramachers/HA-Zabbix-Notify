@@ -137,11 +137,33 @@ def build_message(event: ZabbixEvent, lang: str) -> tuple[str, str]:
     return title, "\n".join(line for line in lines if line)
 
 
-def zabbix_link(event: ZabbixEvent) -> str | None:
-    """Deep link to the event in the Zabbix frontend, if the base URL is known."""
-    base = event.zabbix_url.rstrip("/")
-    if not base.lower().startswith(("http://", "https://")):
+def normalize_base_url(url: str | None) -> str:
+    """Base address of the Zabbix frontend without trailing slash, or "" if unusable."""
+    base = (url or "").strip().rstrip("/")
+    return base if base.lower().startswith(("http://", "https://")) else ""
+
+
+def event_link(base: str, trigger_id: str, event_id: str) -> str | None:
+    """Deep link to one event in the Zabbix frontend."""
+    if not base:
         return None
-    if event.trigger_id and event.event_id:
-        return f"{base}/tr_events.php?triggerid={event.trigger_id}&eventid={event.event_id}"
-    return f"{base}/zabbix.php?action=problem.view"
+    if trigger_id and event_id:
+        return f"{base}/tr_events.php?triggerid={trigger_id}&eventid={event_id}"
+    return problems_link(base)
+
+
+def problems_link(base: str) -> str | None:
+    """Link to the list of current problems in the Zabbix frontend."""
+    return f"{base}/zabbix.php?action=problem.view" if base else None
+
+
+def zabbix_link(event: ZabbixEvent, base: str | None = None) -> str | None:
+    """Deep link to the event in the Zabbix frontend, if the base URL is known.
+
+    ``base`` (a configured address) takes precedence over the address Zabbix sent.
+    """
+    return event_link(
+        normalize_base_url(base) or normalize_base_url(event.zabbix_url),
+        event.trigger_id,
+        event.event_id,
+    )

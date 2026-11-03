@@ -23,7 +23,9 @@
           "use_notification_center": "Benachrichtigungszentrale Enhanced Notify nutzen, wenn installiert",
           "persistent_notification": "Home-Assistant-Benachrichtigungen anzeigen (ohne Benachrichtigungszentrale)",
           "link_to_zabbix": "Benachrichtigungen mit dem Problem in Zabbix verlinken",
+          "zabbix_url": "Adresse der Zabbix-Oberfläche",
           "icon": "Icon der Meldungen",
+          "show_dashboard": "Dashboard „Zabbix“ in der Seitenleiste anzeigen",
           "notify_problem": "Push-Dienste für neue Probleme",
           "notify_update": "Push-Dienste für Problem-Änderungen",
           "notify_resolved": "Push-Dienste für behobene Probleme",
@@ -33,12 +35,15 @@
           "use_notification_center": "Mit der Benachrichtigungszentrale wählst du die Empfänger dort pro Meldungstyp. Solange niemand ausgewählt ist, bekommt auch niemand einen Push.",
           "notify_problem": "Wird nur ohne Benachrichtigungszentrale verwendet. Leer lassen, um keinen Push zu senden.",
           "regenerate_token": "Das bisherige Token wird ungültig. Danach in Zabbix aktualisieren.",
-          "icon": "Optional. Wird in der Benachrichtigungszentrale für die drei Zabbix-Typen statt des Kategorie-Icons angezeigt: ein Icon-Name (mdi:server), ein Pfad zu einem Bild auf diesem Home Assistant (/local/zabbix.png, Datei in config/www) oder eine Webadresse. Leer = Icon der Kategorie. Benötigt Benachrichtigungszentrale 0.3.0-beta.3 oder neuer."
+          "icon": "Optional. Wird in der Benachrichtigungszentrale für die drei Zabbix-Typen statt des Kategorie-Icons angezeigt: ein Icon-Name (mdi:server), ein Pfad zu einem Bild auf diesem Home Assistant (/local/zabbix.png, Datei in config/www) oder eine Webadresse. Leer = Icon der Kategorie. Benötigt Benachrichtigungszentrale 0.3.0-beta.3 oder neuer.",
+          "zabbix_url": "Optional, z. B. https://zabbix.example.com. Für die Links im Dashboard und in Benachrichtigungen. Leer = Adresse, die Zabbix selbst mitschickt ({$ZABBIX.URL}).",
+          "show_dashboard": "Zeigt offene Probleme, betroffene Hosts und Links zu Zabbix. Nur für Administratoren sichtbar, Farben folgen dem Theme von Home Assistant."
         }
       }
     },
     "error": {
-      "invalid_icon": "Ungültiges Icon. Erlaubt sind ein Icon-Name wie mdi:server, ein Pfad wie /local/zabbix.png, eine http(s)-Adresse oder data:image/…;base64,…"
+      "invalid_icon": "Ungültiges Icon. Erlaubt sind ein Icon-Name wie mdi:server, ein Pfad wie /local/zabbix.png, eine http(s)-Adresse oder data:image/…;base64,…",
+      "invalid_url": "Ungültige Adresse. Sie muss mit http:// oder https:// beginnen."
     }
   },
   "entity": {
@@ -58,6 +63,30 @@
         "de": "Deutsch",
         "en": "English"
       }
+    }
+  },
+  "services": {
+    "dismiss_problem": {
+      "name": "Problem als erledigt entfernen",
+      "description": "Entfernt ein offenes Problem aus Home Assistant, dessen Behoben-Meldung nie angekommen ist. In Zabbix ändert sich nichts, es wird nichts benachrichtigt.",
+      "fields": {
+        "event_id": {
+          "name": "Ereignis-ID",
+          "description": "Die Zabbix-Ereignis-ID des Problems (steht im Dashboard und in den Attributen des Sensors)."
+        },
+        "entry_id": {
+          "name": "Quelle",
+          "description": "Nur nötig bei mehreren Zabbix-Quellen."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_source": {
+      "message": "Es ist keine passende Zabbix-Quelle geladen."
+    },
+    "unknown_problem": {
+      "message": "Es gibt kein offenes Problem mit der Ereignis-ID {event_id}."
     }
   }
 }

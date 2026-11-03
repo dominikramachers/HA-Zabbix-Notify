@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0
+
+- New **Zabbix dashboard** in the sidebar (admins), shipped with the integration, no setup. Shows open problems by severity, affected hosts, last event, links to the Zabbix frontend and to each problem, a severity filter and one tab per Zabbix source. Colours follow the Home Assistant theme. Can be switched off with *Show dashboard in the sidebar*.
+- New option *Zabbix address*: base URL used for the links; empty uses the address Zabbix announces.
+- New service `zabbix_notify.dismiss_problem` (and a ✕ button in the dashboard) to remove a problem whose recovery never arrived, for example when the trigger was disabled in Zabbix. Nothing is sent, and a late duplicate is ignored.
+- The integration now shows the Zabbix logo instead of a bell.
+- The open-problems sensor has more attributes (`affected_hosts`, `zabbix_url`, `problems_url`; per problem `trigger_id`, `acknowledged`, `since`, `url`) and holds up to 50 problems. The large attributes are excluded from the recorder.
+- Internal version constant and manifest version are in sync again.
+
 ## 0.1.3
 
 - The notification center was renamed from *DORALAB Notify* (`doralab_notify`) to **Enhanced Notify** (`enhanced_notify`). The bridge uses `enhanced_notify.send` and still falls back to `doralab_notify.send`, so nothing breaks while you switch. No settings need to change.

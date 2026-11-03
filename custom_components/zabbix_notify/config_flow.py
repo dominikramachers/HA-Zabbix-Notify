@@ -32,9 +32,12 @@ from .const import (
     OPT_NOTIFY_UPDATE,
     OPT_PERSISTENT,
     OPT_REGENERATE,
+    OPT_SHOW_PANEL,
     OPT_USE_CENTER,
+    OPT_ZABBIX_URL,
     TOKEN_HEADER,
 )
+from .texts import normalize_base_url
 
 _IGNORED_NOTIFY_SERVICES = {"notify", "persistent_notification", "send_message"}
 
@@ -100,14 +103,20 @@ class ZabbixNotifyOptionsFlow(OptionsFlow):
         options = entry.options
         if user_input is not None:
             icon = str(user_input.get(OPT_ICON, "")).strip()
-            if is_valid_icon(icon):
+            url_text = str(user_input.get(OPT_ZABBIX_URL, "")).strip()
+            url = normalize_base_url(url_text)
+            if not is_valid_icon(icon):
+                errors[OPT_ICON] = "invalid_icon"
+            if url_text and not url:
+                errors[OPT_ZABBIX_URL] = "invalid_url"
+            if not errors:
                 user_input[OPT_ICON] = icon
+                user_input[OPT_ZABBIX_URL] = url
                 if user_input.pop(OPT_REGENERATE, False):
                     self.hass.config_entries.async_update_entry(
                         entry, data={**entry.data, CONF_TOKEN: secrets.token_urlsafe(32)}
                     )
                 return self.async_create_entry(data=user_input)
-            errors[OPT_ICON] = "invalid_icon"
             # Show the form again with what the user entered
             options = {**options, **user_input}
 
@@ -140,7 +149,11 @@ class ZabbixNotifyOptionsFlow(OptionsFlow):
                     OPT_PERSISTENT, default=options.get(OPT_PERSISTENT, True)
                 ): bool,
                 vol.Optional(OPT_LINK, default=options.get(OPT_LINK, True)): bool,
+                vol.Optional(OPT_ZABBIX_URL, default=options.get(OPT_ZABBIX_URL, "")): str,
                 vol.Optional(OPT_ICON, default=options.get(OPT_ICON, "")): str,
+                vol.Optional(
+                    OPT_SHOW_PANEL, default=options.get(OPT_SHOW_PANEL, True)
+                ): bool,
                 vol.Optional(
                     OPT_NOTIFY_PROBLEM, default=list(options.get(OPT_NOTIFY_PROBLEM, []))
                 ): notify_selector(OPT_NOTIFY_PROBLEM),

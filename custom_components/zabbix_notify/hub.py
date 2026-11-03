@@ -39,6 +39,7 @@ from .const import (
     OPT_NOTIFY_UPDATE,
     OPT_PERSISTENT,
     OPT_USE_CENTER,
+    OPT_ZABBIX_URL,
     SAVE_DELAY,
     SEVERITY_KEYS,
     STORAGE_VERSION,
@@ -47,7 +48,15 @@ from .const import (
     VERSION,
 )
 from .payload import ZabbixEvent, parse_event
-from .texts import build_message, resolve_language, type_name, zabbix_link
+from .texts import (
+    build_message,
+    event_link,
+    normalize_base_url,
+    problems_link,
+    resolve_language,
+    type_name,
+    zabbix_link,
+)
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -61,6 +70,16 @@ _NOTIFY_OPTION = {
 }
 
 
+def _acknowledged(update_action: str, previous: bool) -> bool:
+    """Acknowledgement state after an update event (Zabbix reports actions in English)."""
+    actions = {part.strip().lower() for part in update_action.split(",")}
+    if "unacknowledged" in actions:
+        return False
+    if "acknowledged" in actions:
+        return True
+    return previous
+
+
 class ZabbixHub:
     """State and behaviour of one configured Zabbix source."""
 
@@ -71,6 +90,8 @@ class ZabbixHub:
         self.open: dict[str, dict[str, Any]] = {}
         self._resolved: dict[str, str] = {}
         self.last_received: datetime | None = None
+        # Frontend address last announced by Zabbix ({$ZABBIX.URL} of the media type)
+        self._announced_url = ""
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}"
         )
@@ -89,6 +110,21 @@ class ZabbixHub:
     def open_count(self) -> int:
         return len(self.open)
 
+    @property
+    def base_url(self) -> str:
+        """Zabbix frontend address: the configured one, else the one Zabbix announced."""
+        return normalize_base_url(self._opt(OPT_ZABBIX_URL, "")) or self._announced_url
+
+    @property
+    def problems_url(self) -> str | None:
+        return problems_link(self.base_url)
+
+    def problem_url(self, problem: dict[str, Any]) -> str | None:
+        """Link to one open problem in the Zabbix frontend."""
+        return event_link(
+            self.base_url, problem.get("trigger_id", ""), problem.get("event_id", "")
+        )
+
     def _opt(self, key: str, default: Any) -> Any:
         return self.entry.options.get(key, default)
 
@@ -104,12 +140,14 @@ class ZabbixHub:
         self._resolved = dict(data.get("resolved", {}))
         last = data.get("last_received")
         self.last_received = dt_util.parse_datetime(last) if last else None
+        self._announced_url = normalize_base_url(data.get("zabbix_url"))
 
     def _dump(self) -> dict[str, Any]:
         return {
             "open": self.open,
             "resolved": self._resolved,
             "last_received": self.last_received.isoformat() if self.last_received else None,
+            "zabbix_url": self._announced_url,
         }
 
     async def async_save(self) -> None:
@@ -177,6 +215,9 @@ class ZabbixHub:
             _LOGGER.debug("Ignoring stale %s for resolved event %s", event.kind, event.event_id)
             return {"kind": event.kind, "ignored": "stale"}
 
+        if announced := normalize_base_url(event.zabbix_url):
+            self._announced_url = announced
+
         now = dt_util.utcnow().isoformat()
         if event.kind == KIND_RESOLVED:
             self.open.pop(event.event_id, None)
@@ -187,9 +228,14 @@ class ZabbixHub:
             previous = self.open.get(event.event_id, {})
             self.open[event.event_id] = {
                 "event_id": event.event_id,
+                "trigger_id": event.trigger_id or previous.get("trigger_id", ""),
                 "host": event.host or previous.get("host", ""),
                 "name": event.name or previous.get("name", ""),
                 "severity": event.severity,
+                "opdata": event.opdata or previous.get("opdata", ""),
+                "acknowledged": _acknowledged(
+                    event.update_action, bool(previous.get("acknowledged", False))
+                ),
                 "since": previous.get("since", now),
             }
 
@@ -207,7 +253,7 @@ class ZabbixHub:
                 "update_action": event.update_action,
                 "update_message": event.update_message,
                 "tags": event.tags,
-                "url": zabbix_link(event),
+                "url": zabbix_link(event, self._opt(OPT_ZABBIX_URL, "")),
             },
         )
 
@@ -217,6 +263,26 @@ class ZabbixHub:
             self._schedule_save()
             async_dispatcher_send(self.hass, self.signal)
         return {"kind": event.kind, "open_problems": self.open_count}
+
+    def dismiss(self, event_id: str) -> bool:
+        """Forget an open problem without a recovery event (silent, nothing is sent).
+
+        For problems whose recovery never reached Home Assistant, for example because
+        Zabbix was unable to deliver it or the trigger was disabled in Zabbix.
+        """
+        problem = self.open.pop(event_id, None)
+        if problem is None:
+            return False
+        self._resolved[event_id] = dt_util.utcnow().isoformat()
+        while len(self._resolved) > MAX_RESOLVED_MEMORY:
+            self._resolved.pop(next(iter(self._resolved)))
+        if self._opt(OPT_PERSISTENT, True):
+            persistent_notification.async_dismiss(
+                self.hass, f"{DOMAIN}_{self.webhook_id[:8]}_{event_id}"
+            )
+        self._schedule_save()
+        async_dispatcher_send(self.hass, self.signal)
+        return True
 
     # --------------------------------------------------------------- delivery
 
@@ -232,7 +298,11 @@ class ZabbixHub:
     async def _async_deliver(self, event: ZabbixEvent) -> None:
         lang = resolve_language(self._opt(OPT_LANGUAGE, "auto"), self.hass.config.language)
         title, message = build_message(event, lang)
-        link = zabbix_link(event) if self._opt(OPT_LINK, True) else None
+        link = (
+            zabbix_link(event, self._opt(OPT_ZABBIX_URL, ""))
+            if self._opt(OPT_LINK, True)
+            else None
+        )
 
         if center := self._center_domain():
             await self._async_send_center(center, event, lang, title, message, link)
