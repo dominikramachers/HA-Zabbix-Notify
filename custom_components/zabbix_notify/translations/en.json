@@ -36,14 +36,14 @@
           "notify_problem": "Only used without the notification center. Leave empty to send no push.",
           "regenerate_token": "Invalidates the current token. Update it in Zabbix afterwards.",
           "icon": "Optional. Shown for the three Zabbix types in the notification center instead of the category icon: an icon name (mdi:server), a path to an image on this Home Assistant (/local/zabbix.png, file in config/www) or a web address. Empty = category icon. Needs notification center 0.3.0-beta.3 or newer.",
-          "zabbix_url": "Optional, e.g. https://zabbix.example.com. Used for the links in the dashboard and in notifications. Empty = the address Zabbix sends itself ({$ZABBIX.URL}).",
+          "zabbix_url": "Optional. Used for the links in the dashboard and in notifications. Empty = the address Zabbix sends itself (macro ZABBIX.URL).",
           "show_dashboard": "Shows open problems, affected hosts and links to Zabbix. Visible to administrators only, colours follow the Home Assistant theme."
         }
       }
     },
     "error": {
       "invalid_icon": "Invalid icon. Use an icon name like mdi:server, a path like /local/zabbix.png, an http(s) address or data:image/…;base64,…",
-      "invalid_url": "Invalid address. It must start with http:// or https://."
+      "invalid_url": "Invalid address. Enter the full address including the protocol (http or https)."
     }
   },
   "entity": {
