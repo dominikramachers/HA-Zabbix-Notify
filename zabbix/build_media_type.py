@@ -35,6 +35,16 @@ PARAMETERS = [
     ("event_tagsjson", "{EVENT.TAGSJSON}"),
 ]
 
+# Zabbix only sends through a media type when a message template exists for the
+# event kind (otherwise the action log says "No message defined for media type").
+# The script ignores these texts, it builds its own from the event parameters.
+# (operation mode, subject, message)
+TEMPLATES = [
+    ("PROBLEM", "Problem: {EVENT.NAME}", "Problem started at {EVENT.TIME} on {EVENT.DATE}\\nHost: {HOST.NAME}\\nSeverity: {EVENT.SEVERITY}"),
+    ("RECOVERY", "Resolved: {EVENT.NAME}", "Problem resolved at {EVENT.RECOVERY.TIME} on {EVENT.RECOVERY.DATE}\\nHost: {HOST.NAME}"),
+    ("UPDATE", "Updated: {EVENT.NAME}", "{USER.FULLNAME} {EVENT.UPDATE.ACTION} problem at {EVENT.UPDATE.DATE} {EVENT.UPDATE.TIME}\\nHost: {HOST.NAME}"),
+]
+
 DESCRIPTION = (
     "Sends problem, update and recovery events to the Zabbix Notify "
     "integration in Home Assistant. https://github.com/dominikramachers/HA-Zabbix-Notify"
@@ -58,6 +68,12 @@ def build() -> str:
     lines.append(textwrap.indent(script, " " * 8))
     lines.append("      timeout: 30s")
     lines.append(f"      description: '{DESCRIPTION}'")
+    lines.append("      message_templates:")
+    for mode, subject, message in TEMPLATES:
+        lines.append("        - event_source: TRIGGERS")
+        lines.append(f"          operation_mode: {mode}")
+        lines.append(f"          subject: '{subject}'")
+        lines.append(f'          message: "{message}"')
     return "\n".join(lines) + "\n"
 
 

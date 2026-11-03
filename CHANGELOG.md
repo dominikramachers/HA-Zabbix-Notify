@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Fix: the Zabbix media type import now contains message templates for problem, recovery and update. Without them Zabbix refused to send ("No message defined for media type").
+
 ## 0.1.0
 
 - First version: webhook endpoint with token, problem / update / resolved events, one notification per problem
